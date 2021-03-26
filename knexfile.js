@@ -6,7 +6,7 @@ module.exports = {
     connection: {
       database: "fake_dropbox",
       user: "moises",
-      password: "",
+      password: "lol",
     },
   },
 
