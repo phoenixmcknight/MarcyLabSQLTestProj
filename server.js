@@ -53,14 +53,11 @@ app.get("/users/:id/media", async (req, res) => {
 app.post("/users/:user_id/upload", async (req, res) => {
   const user_id = req.params.user_id;
   try {
-    console.log(req.body.user_id, req.body.file_name, req.body.url);
     await db.none(
       "insert into media (user_id,file_name, url) values ($1, $2, $3)",
       [user_id, req.body.file_name, req.body.url]
     );
-    return res.json({
-      message: "success",
-    });
+    // res.redirect(`users/${user_id}/media`);
   } catch (err) {
     res.status(500).json(err);
   }
