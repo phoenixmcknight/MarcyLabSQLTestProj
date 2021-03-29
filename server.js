@@ -2,6 +2,8 @@ const { render } = require("ejs");
 const { response } = require("express");
 const express = require("express");
 const db = require("./db");
+const DropBox = require("./DropBox");
+const dropBox = new DropBox();
 
 const app = express();
 
@@ -18,7 +20,7 @@ app.get("/", function (req, res) {
 });
 app.get("/users", async (req, res) => {
   try {
-    const users = await db.any(`select * from users`);
+    const users = await dropBox.showUsers();
     return res.json(users);
   } catch (error) {
     res.status(500).send(error);
@@ -28,10 +30,7 @@ app.get("/users", async (req, res) => {
 app.post("/users", async (req, res) => {
   const data = req.body;
   try {
-    const info = await db.one(
-      `insert into users (user_name) values ($1) returning id`,
-      data.username
-    );
+    const info = await dropBox.createUser(data);
     res.redirect(`/users/${info.id}/media`);
   } catch (err) {
     res.status(500).json(err);
@@ -41,25 +40,32 @@ app.post("/users", async (req, res) => {
 app.get("/users/:id/media", async (req, res) => {
   const id = req.params.id;
   try {
-    const media = await db.any(`select * FROM media where user_id = ${id}`);
+    const media = await dropBox.showUserMedia(id);
     return res.json(media);
   } catch (err) {
     res.status(500).json(err);
   }
 });
 
-// app.get("/users/:user_id/upload", async (req, res) => {});
-
 app.post("/users/:user_id/upload", async (req, res) => {
   const user_id = req.params.user_id;
   try {
-    await db.none(
-      "insert into media (user_id,file_name, url) values ($1, $2, $3)",
-      [user_id, req.body.file_name, req.body.url]
-    );
-    // res.redirect(`users/${user_id}/media`);
+    await dropBox.uploadMedia(user_id, req.body.file_name, req.body.url);
+    res.redirect(`users/${user_id}/media`);
   } catch (err) {
     res.status(500).json(err);
   }
 });
+
+app.post("/users/:user_id/media/delete/:id", async (req, res) => {
+  const user_id = req.params.user_id;
+  const file_id = req.params.id;
+  try {
+    await dropBox.deleteMedia(file_id);
+    res.redirect(`users/${user_id}/media`);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
 app.listen(PORT);
